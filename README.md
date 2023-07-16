@@ -95,3 +95,4 @@ Please note that you need to have the library.db file in the current directory, 
 Note:
 It is important to handle the encryption key securely to ensure the confidentiality of the files.
 # encrypt_tracks
+# encrypt_tracks
