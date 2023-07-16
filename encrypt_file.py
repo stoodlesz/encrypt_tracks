@@ -121,7 +121,7 @@ def delete_file_from_database(filename):
 
             print(f"File '{filename}' has been deleted from the database.")
         else:
-            print("Deletion canceled.")
+            print("Deletion cancelled.")
     else:
         print(f"File '{filename}' does not exist in the database.")
 
