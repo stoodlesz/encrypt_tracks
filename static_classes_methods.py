@@ -8,22 +8,12 @@ import os
 from werkzeug.utils import secure_filename
 
 
-def calculate_checksum(file_data):
-    # Calculate the checksum of the file data using SHA-256 hashing algorithm
-    sha256 = hashlib.sha256()
-    sha256.update(file_data)
-    checksum = sha256.hexdigest()
-    return checksum
-
-
 class SongDecryptor:
-    def __init__(self, encryption_key):
-        self.encryption_key = encryption_key
-
-    def decrypt_lyrics(self, encrypted_lyrics, iv):
+    @staticmethod
+    def decrypt_lyrics(encryption_key, encrypted_lyrics, iv):
         # Decrypt the lyrics using the provided encryption key and IV (converted from hex)
         cipher = Cipher(
-            algorithms.AES(self.encryption_key),
+            algorithms.AES(encryption_key),
             modes.CBC(iv),
             backend=default_backend(),
         )
@@ -39,11 +29,8 @@ class SongDecryptor:
 
 
 class AddSong:
-    def __init__(self):
-        # Initialize the SongDecryptor with a random encryption key
-        self.song_decryptor = SongDecryptor(os.urandom(32))
-
-    def encrypt_file(self, file_data, encryption_key):
+    @classmethod
+    def encrypt_file(cls, file_data, encryption_key):
         # Encrypt the file data using AES encryption with CBC mode
         iv = os.urandom(16)
         cipher = Cipher(
@@ -58,11 +45,13 @@ class AddSong:
 
         return iv, encrypted_data
 
-    def decrypt_file(self, encrypted_data, iv):
+    @classmethod
+    def decrypt_file(cls, encryption_key, encrypted_data, iv):
         # Decrypt the file data using the SongDecryptor
-        return self.song_decryptor.decrypt_lyrics(encrypted_data, iv)
+        return SongDecryptor.decrypt_lyrics(encryption_key, encrypted_data, iv)
 
-    def add_song(self):
+    @classmethod
+    def add_song(cls):
         song_name = input("Enter the song name: ")
         song_lyrics = input("Enter the song lyrics: ")
 
@@ -88,8 +77,8 @@ class AddSong:
             "INSERT INTO songs (name, lyrics, encrypted_lyrics, iv) VALUES (?, ?, ?, ?)"
         )
         encryption_key = os.urandom(32)
-        iv, encrypted_data = self.encrypt_file(song_lyrics.encode(), encryption_key)
-        song_checksum = calculate_checksum(song_lyrics.encode())
+        iv, encrypted_data = cls.encrypt_file(song_lyrics.encode(), encryption_key)
+        song_checksum = cls.calculate_checksum(song_lyrics.encode())
 
         cursor.execute(
             query,
@@ -107,46 +96,18 @@ class AddSong:
         print("KEEP THIS KEY TO ACCESS YOUR FILE:")
         print(encryption_key.hex())
 
-    def view_song(self):
-        song_name = input("Enter the song name to view: ")
-
-        conn = sqlite3.connect("library.db")
-        cursor = conn.cursor()
-
-        query = "SELECT name, encrypted_lyrics, iv FROM songs WHERE name=?"
-        cursor.execute(query, (song_name,))
-        result = cursor.fetchone()
-
-        if result is not None:
-            (
-                song_name,
-                encrypted_lyrics,
-                iv_hex,
-            ) = result
-
-            # Ensure iv_hex is a string
-            iv_hex = iv_hex.decode() if isinstance(iv_hex, bytes) else iv_hex
-
-            # Convert the IV from hex to bytes
-            iv = bytes.fromhex(iv_hex)
-
-            # Decrypt the lyrics using the provided IV and a new random encryption key
-            song_decryptor = SongDecryptor(os.urandom(32))
-            decrypted_lyrics = song_decryptor.decrypt_lyrics(encrypted_lyrics, iv)
-
-            # Display the decrypted lyrics
-            print(f"Decrypted Lyrics for '{song_name}':\n{decrypted_lyrics.decode()}")
-        else:
-            print(f"Song '{song_name}' does not exist in the database.")
-
-        conn.close()
+    @staticmethod
+    def calculate_checksum(file_data):
+        # Calculate the checksum of the file data using SHA-256 hashing algorithm
+        sha256 = hashlib.sha256()
+        sha256.update(file_data)
+        checksum = sha256.hexdigest()
+        return checksum
 
 
 class AdminTools:
-    def __init__(self):
-        self.add_song_tool = AddSong()
-
-    def choice_logs_menu(self):
+    @staticmethod
+    def choice_logs_menu():
         while True:
             print("\nAdmin Tools Menu:")
             print("[1] Option 1: Select 1 for logs")
@@ -157,7 +118,7 @@ class AdminTools:
             if choice == "1":
                 logging.info("Admin user accessed the logs.")
                 print("Logs file has been opened.")
-                self.logs()
+                AdminTools.logs()
             elif choice == "2":
                 logging.info("Admin user chose to go back to the main menu.")
                 print("Returning to the main menu.")
@@ -165,7 +126,8 @@ class AdminTools:
             else:
                 print("Invalid choice. Please enter 1 or 2.")
 
-    def logs(self):
+    @staticmethod
+    def logs():
         logs_file = "application.log"
         try:
             with open(logs_file, "r", encoding="utf-8") as file:
@@ -174,7 +136,8 @@ class AdminTools:
         except FileNotFoundError:
             print("Logs file failed to open.")
 
-    def modify_file_in_database(self, filename):
+    @staticmethod
+    def modify_file_in_database(filename):
         conn = sqlite3.connect("library.db")
         cursor = conn.cursor()
 
@@ -213,7 +176,8 @@ class AdminTools:
 
         conn.close()
 
-    def delete_file_from_database(self, filename):
+    @staticmethod
+    def delete_file_from_database(filename):
         conn = sqlite3.connect("library.db")
         cursor = conn.cursor()
 
@@ -239,7 +203,8 @@ class AdminTools:
             print(f"File '{filename}' does not exist in the database.")
             conn.close()
 
-    def view_song(self, filename):
+    @staticmethod
+    def view_song(filename):
         conn = sqlite3.connect("library.db")
         cursor = conn.cursor()
 
@@ -262,8 +227,10 @@ class AdminTools:
             iv = bytes.fromhex(iv_hex)
 
             # Decrypt the lyrics using the provided IV and a new random encryption key
-            song_decryptor = SongDecryptor(os.urandom(32))
-            decrypted_lyrics = song_decryptor.decrypt_lyrics(encrypted_lyrics, iv)
+            encryption_key = os.urandom(32)
+            decrypted_lyrics = AddSong.decrypt_file(
+                encryption_key, encrypted_lyrics, iv
+            )
 
             # Display the decrypted lyrics
             print(f"Decrypted Lyrics for '{song_name}':\n{decrypted_lyrics.decode()}")
@@ -273,26 +240,24 @@ class AdminTools:
         conn.close()
 
 
-admin_tools = AdminTools()
-
 print("Thanks for using the Admin Tools!")
 option = input(
     "Choose an option: \na) Logs\nb) Add Song\nc) Modify File\nd) Delete File\ne) View Song\nf) Quit\n"
 )
 
 if option.lower() == "a":
-    admin_tools.choice_logs_menu()
+    AdminTools.choice_logs_menu()
 elif option.lower() == "b":
-    admin_tools.add_song_tool.add_song()
+    AddSong.add_song()
 elif option.lower() == "c":
     filename = input("Enter the filename to modify: ")
-    admin_tools.modify_file_in_database(filename)
+    AdminTools.modify_file_in_database(filename)
 elif option.lower() == "d":
     filename = input("Enter the filename to delete: ")
-    admin_tools.delete_file_from_database(filename)
+    AdminTools.delete_file_from_database(filename)
 elif option.lower() == "e":
     filename = input("Enter the filename to view: ")
-    admin_tools.view_song(filename)
+    AdminTools.view_song(filename)
 elif option.lower() == "f":
     print("Exiting...")
 else:
