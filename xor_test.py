@@ -22,9 +22,25 @@ class SongEncryptor:
         return decrypted_data
 
 
-class ArtistTools:
+""" class ArtistTools:
     @classmethod
     def add_song(cls):
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        # Check if the username and password exist in the database
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = "SELECT * FROM artist WHERE username=? AND artist_password=?"
+        cursor.execute(query, (username, password))
+        result = cursor.fetchone()
+
+        if result is None:
+            print("Invalid username or password.")
+            conn.close()
+            return
+
         song_name = input("Enter the song name: ")
         song_lyrics = input("Enter the song lyrics: ")
 
@@ -36,14 +52,12 @@ class ArtistTools:
                 song_filename = secure_filename(os.path.basename(file_path))
         except FileNotFoundError:
             print("File not found.")
+            conn.close()
             return
-
-        conn = sqlite3.connect("library.db")
-        cursor = conn.cursor()
 
         # Create the songs table if it doesn't exist
         cursor.execute(
-            "CREATE TABLE IF NOT EXISTS songs (name TEXT, lyrics TEXT, encrypted_lyrics BLOB, song_checksum TEXT)"
+            "CREATE TABLE IF NOT EXISTS songs (name TEXT, lyrics TEXT, encrypted_lyrics BLOB, song_checksum TEXT, username TEXT)"
         )
 
         # Generate a random encryption key for XOR encryption
@@ -57,10 +71,10 @@ class ArtistTools:
         # Calculate the checksum of the song lyrics
         song_checksum = hashlib.sha256(song_lyrics.encode()).hexdigest()
 
-        query = "INSERT INTO songs (name, lyrics, encrypted_lyrics, song_checksum) VALUES (?, ?, ?, ?)"
+        query = "INSERT INTO songs (name, lyrics, encrypted_lyrics, song_checksum, username) VALUES (?, ?, ?, ?, ?)"
         cursor.execute(
             query,
-            (song_name, song_lyrics, encrypted_lyrics, song_checksum),
+            (song_name, song_lyrics, encrypted_lyrics, song_checksum, username),
         )
 
         # Create a table to store the encryption keys
@@ -79,6 +93,21 @@ class ArtistTools:
 
     @classmethod
     def modify_song(cls):
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        # Check if the username and password exist in the database
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = "SELECT * FROM artist WHERE username=? AND artist_password=?"
+        cursor.execute(query, (username, password))
+        result = cursor.fetchone()
+
+        if result is None:
+            print("Invalid username or password.")
+            conn.close()
+            return
         filename = input("Enter the filename to modify: ")
 
         conn = sqlite3.connect("library.db")
@@ -191,6 +220,251 @@ class ArtistTools:
             )
 
             print(f"Decrypted Lyrics for '{song_name}':\n{decrypted_lyrics.decode()}")
+        else:
+            print(f"Song '{filename}' does not exist in the database.")
+
+        conn.close() """
+
+
+class ArtistTools:
+    @classmethod
+    def verify_user(cls, username, password):
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = "SELECT * FROM artist WHERE username=? AND artist_password=?"
+        cursor.execute(query, (username, password))
+        result = cursor.fetchone()
+
+        if result is None:
+            print("Invalid username or password.")
+            conn.close()
+            return False
+
+        conn.close()
+        return True
+
+    @classmethod
+    def add_song(cls):
+        song_name = input("Enter the song name: ")
+        song_lyrics = input("Enter the song lyrics: ")
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        if not cls.verify_user(username, password):
+            return
+
+        file_path = input("Enter the song file path: ")
+
+        try:
+            with open(file_path, "rb") as file:
+                song_file = file.read()
+                song_filename = secure_filename(os.path.basename(file_path))
+        except FileNotFoundError:
+            print("File not found.")
+            return
+
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        # Create the songs table if it doesn't exist
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS songs (name TEXT, lyrics TEXT, encrypted_lyrics BLOB, song_checksum TEXT, username TEXT, password TEXT)"
+        )
+
+        # Generate a random encryption key for XOR encryption
+        encryption_key = os.urandom(len(song_lyrics.encode()))
+
+        # Encrypt the song lyrics using XOR
+        encrypted_lyrics = SongEncryptor.xor_encrypt(
+            song_lyrics.encode(), encryption_key
+        )
+
+        # Calculate the checksum of the song lyrics
+        song_checksum = hashlib.sha256(song_lyrics.encode()).hexdigest()
+
+        query = "INSERT INTO songs (name, lyrics, encrypted_lyrics, song_checksum, username, password) VALUES (?, ?, ?, ?, ?, ?)"
+        cursor.execute(
+            query,
+            (
+                song_name,
+                song_lyrics,
+                encrypted_lyrics,
+                song_checksum,
+                username,
+                password,
+            ),
+        )
+
+        # Create a table to store the encryption keys
+        cursor.execute(
+            "CREATE TABLE IF NOT EXISTS song_keys (song_name TEXT, encryption_key BLOB)"
+        )
+
+        # Insert the encryption key into the song_keys table
+        key_query = "INSERT INTO song_keys (song_name, encryption_key) VALUES (?, ?)"
+        cursor.execute(key_query, (song_name, encryption_key))
+
+        conn.commit()
+        conn.close()
+
+        print(f"Song '{song_name}' has been added to the database and encrypted.")
+
+    @classmethod
+    def modify_song(cls):
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        if not cls.verify_user(username, password):
+            return
+
+        filename = input("Enter the filename to modify: ")
+
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = "SELECT name, lyrics, encrypted_lyrics, song_checksum, username, password FROM songs WHERE name=?"
+        cursor.execute(query, (filename,))
+        result = cursor.fetchone()
+
+        if result is not None:
+            (
+                song_name,
+                song_lyrics,
+                encrypted_lyrics,
+                song_checksum,
+                stored_username,
+                stored_password,
+            ) = result
+
+            if username == stored_username and password == stored_password:
+                new_filename = input("Enter the new filename: ")
+                new_lyrics = input("Enter the new lyrics: ")
+
+                # Update the song checksum for the modified lyrics
+                new_song_checksum = hashlib.sha256(new_lyrics.encode()).hexdigest()
+
+                # Encrypt the new song lyrics using XOR
+                encryption_key = cursor.execute(
+                    "SELECT encryption_key FROM song_keys WHERE song_name=?",
+                    (song_name,),
+                ).fetchone()[0]
+                encrypted_lyrics = SongEncryptor.xor_encrypt(
+                    new_lyrics.encode(), encryption_key
+                )
+
+                # Update the file entry with the new filename, lyrics, and encrypted data
+                update_query = "UPDATE songs SET name=?, lyrics=?, encrypted_lyrics=?, song_checksum=? WHERE name=?"
+                cursor.execute(
+                    update_query,
+                    (
+                        new_filename,
+                        new_lyrics,
+                        encrypted_lyrics,
+                        new_song_checksum,
+                        song_name,
+                    ),
+                )
+
+                conn.commit()
+
+                print(
+                    f"File '{song_name}' has been modified to '{new_filename}' and re-encrypted."
+                )
+            else:
+                print("Invalid username or password. Access denied.")
+        else:
+            print(f"File '{filename}' does not exist in the database.")
+
+        conn.close()
+
+    @classmethod
+    def delete_song(cls):
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        if not cls.verify_user(username, password):
+            return
+
+        filename = input("Enter the filename to delete: ")
+
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = "SELECT name, username, password FROM songs WHERE name=?"
+        cursor.execute(query, (filename,))
+        result = cursor.fetchone()
+
+        if result is not None:
+            (
+                song_name,
+                stored_username,
+                stored_password,
+            ) = result
+
+            if username == stored_username and password == stored_password:
+                confirmation = input(
+                    f"Do you want to delete '{filename}'? Press 'y' to confirm or 'n' to cancel: "
+                )
+
+                if confirmation.lower() == "y":
+                    delete_query = "DELETE FROM songs WHERE name=?"
+                    cursor.execute(delete_query, (filename,))
+
+                    delete_key_query = "DELETE FROM song_keys WHERE song_name=?"
+                    cursor.execute(delete_key_query, (filename,))
+
+                    conn.commit()
+
+                    print(f"File '{filename}' has been deleted from the database.")
+                else:
+                    print("Deletion canceled.")
+            else:
+                print("Invalid username or password. Access denied.")
+        else:
+            print(f"File '{filename}' does not exist in the database.")
+
+        conn.close()
+
+    @classmethod
+    def view_song(cls):
+        username = input("Enter your username: ")
+        password = input("Enter your password: ")
+
+        if not cls.verify_user(username, password):
+            return
+
+        filename = input("Enter the filename to view: ")
+
+        conn = sqlite3.connect("library.db")
+        cursor = conn.cursor()
+
+        query = (
+            "SELECT name, encrypted_lyrics, username, password FROM songs WHERE name=?"
+        )
+        cursor.execute(query, (filename,))
+        result = cursor.fetchone()
+
+        if result is not None:
+            song_name, encrypted_lyrics, stored_username, stored_password = result
+
+            if username == stored_username and password == stored_password:
+                # Get the encryption key from the song_keys table
+                encryption_key = cursor.execute(
+                    "SELECT encryption_key FROM song_keys WHERE song_name=?",
+                    (song_name,),
+                ).fetchone()[0]
+
+                # Decrypt the lyrics using XOR and the encryption key
+                decrypted_lyrics = SongEncryptor.xor_decrypt(
+                    encrypted_lyrics, encryption_key
+                )
+
+                print(
+                    f"Decrypted Lyrics for '{song_name}':\n{decrypted_lyrics.decode()}"
+                )
+            else:
+                print("Invalid username or password. Access denied.")
         else:
             print(f"Song '{filename}' does not exist in the database.")
 
