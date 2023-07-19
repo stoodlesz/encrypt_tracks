@@ -74,3 +74,75 @@ elif option.lower() == "g":
     print("Exiting...")
 else:
     print("Invalid option.")
+
+## -------------------------------------------------------
+# OR THIS IS ANOTHER IDEA:
+
+import current_user  # Import the current_user module from the authentication system
+
+# ... (CODE FROM XOR_TEST FILE LIKE BEFORE)
+
+class ArtistTools:
+    @classmethod
+    def add_song(cls):
+        # Ensure the user is logged in before allowing access to this function.
+        if not current_user.is_authenticated():
+            print("You need to log in first.")
+            return
+
+        song_name = input("Enter the song name: ")
+        song_lyrics = input("Enter the song lyrics: ")
+
+        # ... (rest of the code to add a song)
+
+        # Retrieve the user_id of the currently logged-in user
+        user_id = current_user.get_user_id()
+
+        # Store the song details along with the user_id in the songs table
+        query = "INSERT INTO songs (user_id, name, lyrics, encrypted_lyrics, song_checksum) VALUES (?, ?, ?, ?, ?)"
+        cursor.execute(
+            query,
+            (user_id, song_name, song_lyrics, encrypted_lyrics, song_checksum),
+        )
+
+        # ... (rest of the code to store the encryption key in the song_keys table)
+
+        conn.commit()
+        conn.close()
+
+        print(f"Song '{song_name}' has been added to the database and encrypted.")
+
+    @classmethod
+    def modify_song(cls):
+        # Ensure the user is logged in before allowing access to this function.
+        if not current_user.is_authenticated():
+            print("You need to log in first.")
+            return
+
+        # ... (rest of the code to retrieve the song to modify)
+
+        # Check if the song belongs to the currently logged-in user
+        if song_user_id != current_user.get_user_id():
+            print("You are not the owner of this song. Access denied.")
+            return
+
+        # ... (rest of the code to modify the song)
+
+    @classmethod
+    def delete_song(cls):
+        # Ensure the user is logged in before allowing access to this function.
+        if not current_user.is_authenticated():
+            print("You need to log in first.")
+            return
+
+        # ... (rest of the code to retrieve the song to delete)
+
+        # Check if the song belongs to the currently logged-in user
+        if song_user_id != current_user.get_user_id():
+            print("You are not the owner of this song. Access denied.")
+            return
+
+        # ... (rest of the code to delete the song)
+
+    # ... (existing code below)
+
