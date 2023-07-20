@@ -1,23 +1,21 @@
+# pylint: disable=missing-function-docstring
 import logging
 import sqlite3
 import os
 import hashlib
-from cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes
-from cryptography.hazmat.backends import default_backend
-from cryptography.hazmat.primitives import padding
 from werkzeug.utils import secure_filename
 
 
 class SongEncryptor:
     @staticmethod
     def xor_encrypt(data, key):
-        # Perform XOR encryption on data using the given key
+        """Perform XOR encryption on data using the given key."""
         encrypted_data = bytes([a ^ b for a, b in zip(data, key)])
         return encrypted_data
 
     @staticmethod
     def xor_decrypt(encrypted_data, key):
-        # Perform XOR decryption on encrypted_data using the given key
+        """Perform XOR decryption on encrypted_data using the given key."""
         decrypted_data = bytes([a ^ b for a, b in zip(encrypted_data, key)])
         return decrypted_data
 
@@ -25,6 +23,7 @@ class SongEncryptor:
 class ArtistTools:
     @classmethod
     def verify_user(cls, username, password):
+        """Verify the user's credentials by checking the database."""
         conn = sqlite3.connect("library.db")
         cursor = conn.cursor()
 
@@ -42,6 +41,7 @@ class ArtistTools:
 
     @classmethod
     def add_song(cls):
+        """Add a new song to the database with lyrics encryption."""
         song_name = input("Enter the song name: ")
         song_lyrics = input("Enter the song lyrics: ")
         username = input("Enter your username: ")
@@ -108,6 +108,7 @@ class ArtistTools:
 
     @classmethod
     def modify_song(cls):
+        """Modify an existing song in the database with lyrics re-encryption."""
         username = input("Enter your username: ")
         password = input("Enter your password: ")
 
@@ -176,6 +177,7 @@ class ArtistTools:
 
     @classmethod
     def delete_song(cls):
+        """Delete an existing song from the database."""
         username = input("Enter your username: ")
         password = input("Enter your password: ")
 
@@ -224,6 +226,7 @@ class ArtistTools:
 
     @classmethod
     def view_song(cls):
+        """View an existing song from the database with lyrics decryption."""
         username = input("Enter your username: ")
         password = input("Enter your password: ")
 
@@ -270,6 +273,7 @@ class ArtistTools:
 class AdminTools:
     @staticmethod
     def choice_logs_menu():
+        """Display Admin Tools Menu and handle log viewing."""
         while True:
             print("\nAdmin Tools Menu:")
             print("[1] Option 1: Select 1 for logs")
@@ -290,6 +294,7 @@ class AdminTools:
 
     @staticmethod
     def logs():
+        """View logs from the application.log file."""
         logs_file = "application.log"
         try:
             with open(logs_file, "r", encoding="utf-8") as file:
