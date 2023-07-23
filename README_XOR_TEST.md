@@ -13,16 +13,15 @@ Before running the application, ensure you have the following dependencies insta
 
 ## How to Use
 
-You can start the application by running **xor_test.py**:
+You can start the application by running **xor_encryption.py**:
 
 ```bash
-python xor_test.py
+python xor_encryption.py
 ```
 
 Upon launching the application, you will see the main menu with several options:
 
 ```bash
-Thanks for using the Admin Tools!
 Choose an option:
 [a] Logs
 [b] Add Song
@@ -32,7 +31,7 @@ Choose an option:
 [f] Quit
 ```
 
-- If you select a, you will be prompted to enter your username and password to view the logs.
+- If you select a, you will be view logs, if admin.
 
 - To add a new song, select b. You will be asked to provide the song name, lyrics, and the path to the song file. Additionally, you need to enter your username and password to link the song to your account.
 
