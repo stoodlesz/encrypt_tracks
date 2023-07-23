@@ -34,6 +34,9 @@ Choose an option:
 - If you select a, you will be view logs, if admin.
 
 - To add a new song, select b. You will be asked to provide the song name, lyrics, and the path to the song file. You will need to copy and paste the relative file path of the song from the file explorer, for example, open the entire folder in your IDE and using the file explorer in the IDE, right-click on the song you want to upload and `copy path`. This will be the path you use to upload the file. Please view the video file attached to this file called "SongMenu.gif".
+
+![Video_Proof](https://github.com/stoodlesz/encrypt_tracks/assets/29131646/27d3ee9f-9df3-4643-b4ff-8f02652e30d1)
+
   > Add a new song to the database.
 
         This function allows the user to add a new song to the song database. It prompts the user
