@@ -85,3 +85,62 @@ Choose an option:
         The lyrics are decrypted using XOR with the associated encryption key from the song_keys table.
 
 - To quit the application, select f.
+
+## SQL Statements
+To show how the SQL file works here is a demonstration:
+
+```bash
+#!/bin/bash
+
+# Create the SQLite database file
+touch library.db
+
+# Execute SQL commands to create the 'songs' table
+sqlite3 library.db <<EOF
+CREATE TABLE IF NOT EXISTS songs (
+    name TEXT,
+    lyrics TEXT,
+    encrypted_lyrics BLOB,
+    song_checksum TEXT
+);
+
+CREATE TABLE IF NOT EXISTS song_keys (
+    song_name TEXT,
+    encryption_key BLOB
+);
+EOF
+
+# Placeholder values for the song details
+song_name="YourSongName"
+song_lyrics="YourSongLyrics"
+encrypted_lyrics="YourEncryptedData"
+song_checksum="YourChecksum"
+encryption_key="YourEncryptionKey"
+
+# Insert a new song into the 'songs' table
+sqlite3 library.db "INSERT INTO songs (name, lyrics, encrypted_lyrics, song_checksum) VALUES ('$song_name', '$song_lyrics', '$encrypted_lyrics', '$song_checksum');"
+
+# Insert the encryption key into the 'song_keys' table
+sqlite3 library.db "INSERT INTO song_keys (song_name, encryption_key) VALUES ('$song_name', '$encryption_key');"
+
+# Update an existing song in the 'songs' table
+new_filename="YourNewSongName"
+new_lyrics="YourModifiedLyrics"
+new_song_checksum="YourNewChecksum"
+sqlite3 library.db "UPDATE songs SET name='$new_filename', lyrics='$new_lyrics', encrypted_lyrics='$encrypted_lyrics', song_checksum='$new_song_checksum' WHERE name='$song_name';"
+
+# Delete a song from the 'songs' table
+song_to_delete="SongToDelete"
+sqlite3 library.db "DELETE FROM songs WHERE name='$song_to_delete';"
+
+# Delete a song's encryption key from the 'song_keys' table
+sqlite3 library.db "DELETE FROM song_keys WHERE song_name='$song_to_delete';"
+
+# Retrieve a song's details from the 'songs' table
+song_to_retrieve="SongToRetrieve"
+sqlite3 library.db "SELECT name, lyrics, encrypted_lyrics, song_checksum FROM songs WHERE name='$song_to_retrieve';"
+
+# Retrieve a song's encryption key from the 'song_keys' table
+sqlite3 library.db "SELECT encryption_key FROM song_keys WHERE song_name='$song_to_retrieve';"
+```
+Replace the placeholders ("YourSongName", "YourSongLyrics", etc.) with the desired values in the script. When these are run, it will execute the SQL commands using the provided placeholders to create, insert, update, and retrieve data from the SQLite database.
