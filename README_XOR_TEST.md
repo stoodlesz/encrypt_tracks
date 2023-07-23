@@ -33,12 +33,12 @@ Choose an option:
 
 - If you select a, you will be view logs, if admin.
 
-- To add a new song, select b. You will be asked to provide the song name, lyrics, and the path to the song file. Additionally, you need to enter your username and password to link the song to your account.
+- To add a new song, select b. You will be asked to provide the song name, lyrics, and the path to the song file.
 
 - To modify a song, select c. You will be prompted for the song's filename and your username and password for verification. After authentication, you can enter the new song filename and lyrics.
 
-- To delete a song, select d. Similar to modification, you will need to enter the song's filename and your username and password to confirm the deletion.
+- To delete a song, select d. Similar to modification, you will need to enter the song's filename. It will double-check with a y or n request.
 
-- To view a song, select e. Again, enter the song's filename and your username and password to decrypt and view the song's lyrics.
+- To view a song, select e. 
 
 - To quit the application, select f.
