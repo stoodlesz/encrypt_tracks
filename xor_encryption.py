@@ -74,8 +74,6 @@ class ArtistTools:
         conn.close()
 
         print(f"Song '{song_name}' has been added to the database and encrypted.")
-        print("KEEP THIS KEY TO ACCESS YOUR FILE:")
-        print(encryption_key.hex())
 
     @classmethod
     def modify_song(cls):

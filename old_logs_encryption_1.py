@@ -104,8 +104,8 @@ class AddSong:
         conn.close()
 
         print(f"Song '{song_name}' has been added to the database and encrypted.")
-        print("KEEP THIS KEY TO ACCESS YOUR FILE:")
-        print(encryption_key.hex())
+"""         print("KEEP THIS KEY TO ACCESS YOUR FILE:")
+        print(encryption_key.hex()) """
 
     def view_song(self):
         song_name = input("Enter the song name to view: ")
