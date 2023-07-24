@@ -13,10 +13,10 @@ Before running the application, ensure you have the following dependencies insta
 
 ## How to Use
 
-You can start the application by running **xor_encryption.py**:
+You can start the application by running **xor_test.py**:
 
 ```bash
-python xor_encryption.py
+python xor_test.py
 ```
 
 Upon launching the application, signing in as **admin**, you will see the main menu with several options:
